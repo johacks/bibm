@@ -9,6 +9,7 @@ npga = {git = "https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPG
 matplotlib = "*"
 
 [dev-packages]
+ipykernel = "*"
 
 [requires]
 python_version = "3"
