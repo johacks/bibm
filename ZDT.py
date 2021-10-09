@@ -131,7 +131,7 @@ class ZDTBase:
         if self.gDeceptiveParetoValue is not None:
             f2Pareto = np.array([self.deceptiveParetoFront(x_i)
                                  for x_i in f1Pareto])
-            plt.plot(f1Pareto, f2Pareto, '-g',
+            plt.plot(f1Pareto, f2Pareto, '-y',
                      label='Best deceptive Pareto-optimal Front')
 
         plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.00), shadow=True,
@@ -148,7 +148,7 @@ class ZDTBase:
              crossover_rate=0.65, mutation_rate=1/170, niche_radius=0.02,
              candidate_size=4, t_dom_p=0.13):
         geneset = "01"
-        genelen = [self.x1_bits + self.m * self.xrest_bits]
+        genelen = [self.x1_bits + (self.m - 1) * self.xrest_bits]
 
         def fnDisplay(statistic):
             self.display(statistic)
@@ -187,7 +187,7 @@ class ZDTBase:
         # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
         img, *imgs = [Image.open(f) for f in fp_in]
         img.save(fp=fp_out, format='GIF', append_images=imgs,
-                 save_all=True, duration=5000 // max_generation, loop=0)
+                 save_all=True, duration=(5000 // max_generation), loop=0)
 
 
 class ZDT1(ZDTBase):
@@ -219,30 +219,13 @@ class ZDT2(ZDT1):
 
     @staticmethod
     def h(f1, g):
-        return 1 - (f1 / g) ** 2
+        return 1 - ((f1 / g) ** 2)
 
 
-class ZDT3(ZDTBase):
-    gGlobalParetoValue = 1
-    gLocalParetoValue = None
-    gDeceptiveParetoValue = None
-    x1_domain = [0, 1]
-    x1_bits = 16
-    xrest_domain = [0, 1]
-    xrest_bits = 16
-    m = 30
+class ZDT3(ZDT1):
     problem_number = 3
-
     f2_max_representation = 5
     f2_min_representation = -1
-
-    @staticmethod
-    def f1(x):
-        return x[0]
-
-    @staticmethod
-    def g(x):
-        return 1 + 9 * (np.sum(x[1:]) / (len(x) - 1))
 
     @staticmethod
     def h(f1, g):
@@ -305,8 +288,6 @@ class ZDT5(ZDTBase):
     @staticmethod
     def f1(x):
         ret = 1 + x[0].count('1')
-        if (ret == 0):
-            print('???')
         return ret
 
     @staticmethod
