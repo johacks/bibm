@@ -61,3 +61,22 @@ class MaximumParetoFrontierError:
             distances.append(np.min(np.linalg.norm(p - self.frontier, axis=1)))
         distances = np.array(distances)
         return np.max(distances)
+
+
+class DiversitySpacing:
+    def __init__(self):
+        pass
+
+    def runMetric(self, statistics):
+        points = []
+        for point in statistics.ParetoSet:
+            p = np.array([[point.Fitness[0], point.Fitness[1]]])
+            points.append(p)
+        points = np.array(points)
+        distances = np.linalg.norm(points - points[:, None], axis=-1, ord=1)
+        np.fill_diagonal(distances, np.Inf)
+        minDistances = np.min(distances, axis=0)
+        meanDistance = np.mean(minDistances)
+        return np.sqrt(
+                np.sum(np.power(np.subtract(minDistances, meanDistance), 2)) /
+                len(minDistances))
