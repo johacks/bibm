@@ -9,9 +9,6 @@ import os
 
 class ZDTBase:
 
-    def __init__(self) -> None:
-        self.generation = 1
-
     gGlobalParetoValue = 1
     gLocalParetoValue = None
     gDeceptiveParetoValue = None
@@ -20,11 +17,15 @@ class ZDTBase:
     xrest_domain = [0, 1]
     xrest_bits = 16
     m = 30
+    displayGenInterval = 10
 
     f1_min_representation = 0
     f1_max_representation = 1
     f2_min_representation = 0
     f2_max_representation = 4
+
+    def __init__(self) -> None:
+        self.generation = 1
 
     @classmethod
     def f2(cls, x, f1):
@@ -94,6 +95,9 @@ class ZDTBase:
         return [[F1, "minimize"], [F2, "minimize"]]
 
     def display(self, statistics):
+        if self.generation % self.displayGenInterval != 1:
+            self.generation = self.generation + 1
+            return
         f1x = []
         f2x = []
         for point in statistics.ParetoSet:
@@ -117,10 +121,9 @@ class ZDTBase:
         plt.title("Zitzler-Deb-Thiele's function {}  -  GENERATION: {}".format(
             self.problem_number, self.generation))
 
-        f1Pareto = np.linspace(self.f1_min_representation,
-                               self.f1_max_representation, 100)
-        f2Pareto = np.array([self.globalParetoFront(x_i) for x_i in f1Pareto])
-        plt.plot(f1Pareto, f2Pareto, '-g', label='Global Pareto-optimal Front')
+        f1Pareto = self.f1Pareto
+        plt.plot(f1Pareto, self.f2ParetoGlobal,
+                 '-g', label='Global Pareto-optimal Front')
 
         if self.gLocalParetoValue is not None:
             f2Pareto = np.array([self.localParetoFront(x_i)
@@ -156,6 +159,13 @@ class ZDTBase:
         def fnGetFitness(genes):
             return self.getfitness(genes)
 
+        self.f1Pareto = np.linspace(self.f1_min_representation,
+                                    self.f1_max_representation, 100)
+        self.f2ParetoGlobal = np.array(
+            [self.globalParetoFront(x_i) for x_i in self.f1Pareto])
+
+        self.paretoGlobalFront = list(zip(self.f1Pareto, self.f2ParetoGlobal))
+
         optimalFitness = [0, 0]
 
         GA = NPGA.NichedParetoGeneticAlgorithm(
@@ -172,6 +182,7 @@ class ZDTBase:
             candidate_size=candidate_size,
             prc_tournament_size=t_dom_p,
             fastmode=True,
+            multithreadmode=True
         )
         for file in os.listdir(f'images/{self.problem_number}'):
             if file.endswith('.png'):
@@ -181,13 +192,16 @@ class ZDTBase:
 
         # filepaths
         fp_in = [f"images/{self.problem_number}/gen{g}.png"
-                 for g in range(1, max_generation + 1)]
+                 for g in range(1, max_generation + 1,
+                                self.displayGenInterval)]
         fp_out = f"images/{self.problem_number}/evolution.gif"
 
         # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
         img, *imgs = [Image.open(f) for f in fp_in]
         img.save(fp=fp_out, format='GIF', append_images=imgs,
-                 save_all=True, duration=(5000 // max_generation), loop=0)
+                 save_all=True,
+                 duration=(5000 // (max_generation / self.displayGenInterval)),
+                 loop=0)
 
 
 class ZDT1(ZDTBase):
