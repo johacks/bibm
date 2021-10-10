@@ -1,6 +1,5 @@
 import numpy as np
 from NPGA.util import IsNonDominatedableFast
-from NPGA import NichedParetoGeneticAlgorithm
 
 
 class ErrorProportion:
