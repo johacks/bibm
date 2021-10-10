@@ -100,7 +100,7 @@ class DiversityMaximumExtension:
         min_points = []
         for i in range(points.shape[1]):
             index_max = np.argmax(points[:,i])
-            index_min = np.argmax(points[:,i])
+            index_min = np.argmin(points[:,i])
             
             maxim_points.append(points[index_max])
             min_points.append(points[index_min])
