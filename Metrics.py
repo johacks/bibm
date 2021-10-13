@@ -90,7 +90,7 @@ class DiversityMaximumExtension:
         points = []
 
         for point in statistics.ParetoSet:
-            p = np.array([point.Fitness[0], point.Fitness[0]])
+            p = np.array([point.Fitness[0], point.Fitness[1]])
             points.append(p)
 
         points = np.array(points)
@@ -99,8 +99,8 @@ class DiversityMaximumExtension:
         maxim_points = []
         min_points = []
         for i in range(points.shape[1]):
-            index_max = np.where(points==np.max(points[:,i]))
-            index_min = np.where(points==np.max(points[:,i]))
+            index_max = np.argmax(points[:,i])
+            index_min = np.argmin(points[:,i])
 
             maxim_points.append(points[index_max])
             min_points.append(points[index_min])
@@ -114,52 +114,52 @@ class DiversityMaximumExtension:
 """
 
 
-class DiversityExtension:
-    def __init__(self, frontier):
-        self.frontier = np.array(frontier)
+# class DiversityExtension:
+#     def __init__(self, frontier):
+#         self.frontier = np.array(frontier)
 
-    def runMetric(self, statistics):
-        points = []
+#     def runMetric(self, statistics):
+#         points = []
 
-        for point in statistics.ParetoSet:
-            p = np.array([point.Fitness[0], point.Fitness[0]])
-            points.append(p)
+#         for point in statistics.ParetoSet:
+#             p = np.array([point.Fitness[0], point.Fitness[0]])
+#             points.append(p)
 
-        points = np.array(points)
-        number_functions = points.shape[1]
+#         points = np.array(points)
+#         number_functions = points.shape[1]
 
-        # Get distances and mean distances between points
-        distances = []
-        for i in range(len(points)-1):
-            point0 = points[i]
-            point1 = points[i+1]
+#         # Get distances and mean distances between points
+#         distances = []
+#         for i in range(len(points)-1):
+#             point0 = points[i]
+#             point1 = points[i+1]
 
-            count = 0
-            for j in range(number_functions):
-                count += (point0[j]-point1[j])[0]**2
+#             count = 0
+#             for j in range(number_functions):
+#                 count+= (point0[j]-point1[j])[0]**2
 
-            distances.append(np.sqrt(count))
-            mean_distances = np.mean(distances)
+#             distances.append(np.sqrt(count))
+#             mean_distances = np.mean(distances)
 
-        # Get distances between extreme frontier points and its nearest pareto point
-        distance_ext = []
-        for i in range(number_functions):
-            index = np.where(self.frontier == np.max(self.frontier[:, i]))
-            ext_point = self.frontier[index]
-            distances = np.linalg.norm(ext_point - points[:, None], axis=-1, ord=1)
-            distance_ext.append(np.min(distances))
+#         # Get distances between extreme frontier points and its nearest pareto point
+#         distance_ext = []
+#         for i in range(number_functions):
+#             index = np.where(self.frontier == np.max(self.frontier[:,i]))
+#             ext_point = self.frontier[index]
+#             distances = np.linalg.norm(ext_point - points[:, None], axis=-1, ord=1)
+#             distance_ext.append(np.min(distances))
 
-        # First summary of metric
-        sum1 = np.sum(distance_ext)
+#         # First summary of metric
+#         sum1 = np.sum(distance_ext)
 
-        # Calculate second summary of the metric
-        sum2 = 0
-        for distance in distances:
-            sum2 += np.abs(distance - mean_distances)
+#         # Calculate second summary of the metric
+#         sum2 = 0
+#         for distance in distances:
+#             sum2 += np.abs(distance - mean_distances)
 
-        # Calculate denominator of the metric
-        denominator = 0
-        for i in range(number_functions):
-            denominator += distance_ext[i]+(len(points)*mean_distances)
+#         # Calculate denominator of the metric
+#         denominator = 0
+#         for i in range(number_functions):
+#             denominator+=distance_ext[i]+(len(points)*mean_distances)
 
-        return (sum1 + sum2)/denominator
+#         return (sum1 + sum2)/denominator
