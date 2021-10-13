@@ -5,6 +5,8 @@ import numpy as np
 import textwrap
 from PIL import Image
 import os
+from datetime import datetime
+import yaml
 
 
 class ZDTBase:
@@ -24,8 +26,20 @@ class ZDTBase:
     f2_min_representation = 0
     f2_max_representation = 4
 
-    def __init__(self) -> None:
+    def __init__(self, exp_dir='experiments/', exp_alias=None, keep_imgs=True):
         self.generation = 1
+        self.base_path = f'{exp_dir}zdt_{self.problem_number}/'
+        if not os.path.exists(self.base_path):
+            os.makedirs(self.base_path)
+        if exp_alias is None:
+            exp_alias = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
+        if os.path.exists(f'{self.base_path}{exp_alias}/'):
+            now = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
+            self.base_path = f'{self.base_path}{exp_alias}-{now}/'
+        else:
+            self.base_path = f'{self.base_path}{exp_alias}/'
+        os.makedirs(f'{self.base_path}images/')
+        self.keep_imgs = keep_imgs
 
     @classmethod
     def f2(cls, x, f1):
@@ -141,15 +155,21 @@ class ZDTBase:
                    ncol=2)
         plt.grid()
         plt.draw()
-        plt.savefig(f'images/{self.problem_number}/gen{self.generation}.png')
+        plt.savefig(f'{self.base_path}images/gen{self.generation}.png')
         plt.pause(0.0001)
         plt.show(block=False)
 
         self.generation = self.generation + 1
 
+    def get_global_pareto_front_points(self, n_points=100):
+        x = np.linspace(self.f1_min_representation,
+                        self.f1_max_representation, n_points)
+        y = np.array([self.globalParetoFront(x_i) for x_i in x])
+        return np.column_stack((x, y))
+
     def test(self, population_size=200, max_generation=400,
              crossover_rate=0.65, mutation_rate=1/170, niche_radius=0.02,
-             candidate_size=4, t_dom_p=0.13):
+             candidate_size=4, t_dom_p=0.13, metrics=[]):
         geneset = "01"
         genelen = [self.x1_bits + (self.m - 1) * self.xrest_bits]
 
@@ -184,17 +204,15 @@ class ZDTBase:
             fastmode=True,
             multithreadmode=True
         )
-        for file in os.listdir(f'images/{self.problem_number}'):
-            if file.endswith('.png'):
-                os.remove(f'images/{self.problem_number}/{file}')
         GA.Evolution()
         plt.show()
 
-        # filepaths
-        fp_in = [f"images/{self.problem_number}/gen{g}.png"
-                 for g in range(1, max_generation + 1,
-                                self.displayGenInterval)]
-        fp_out = f"images/{self.problem_number}/evolution.gif"
+        # Save results
+
+        # Gif
+        fp_in = [f'{self.base_path}images/gen{g}.png'
+                 for g in range(1, max_generation+1, self.displayGenInterval)]
+        fp_out = f"{self.base_path}evolution.gif"
 
         # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
         img, *imgs = [Image.open(f) for f in fp_in]
@@ -202,6 +220,32 @@ class ZDTBase:
                  save_all=True,
                  duration=(5000 // (max_generation / self.displayGenInterval)),
                  loop=0)
+
+        # Cleanup images
+        if not self.keep_imgs:
+            for file in os.listdir(f'{self.base_path}images/'):
+                os.remove(f'{self.base_path}images/{file}')
+
+        # Metrics
+        output = {
+            'Metrics': {}
+        }
+        for metric in metrics:
+            name = metric.__class__.__name__
+            output['Metrics'][name] = float(metric.runMetric(GA.Statistics))
+
+        # Parameters
+        output['Parameters'] = {
+            't_dom': t_dom_p,
+            'Candidate Size': candidate_size,
+            'Niche Radius': niche_radius,
+            'Population Size': population_size,
+            'Max Generations': max_generation,
+            'Crossover rate': crossover_rate,
+            'Mutation Rate': mutation_rate,
+        }
+        with open(f'{self.base_path}metadata.yaml', 'w') as f:
+            yaml.dump(output, f, allow_unicode=True)
 
 
 class ZDT1(ZDTBase):
