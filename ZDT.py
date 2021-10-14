@@ -19,14 +19,14 @@ class ZDTBase:
     xrest_domain = [0, 1]
     xrest_bits = 16
     m = 30
-    displayGenInterval = 10
 
     f1_min_representation = 0
     f1_max_representation = 1
     f2_min_representation = 0
     f2_max_representation = 4
 
-    def __init__(self, exp_dir='experiments/', exp_alias=None, keep_imgs=True):
+    def __init__(self, exp_dir='experiments/', exp_alias=None, keep_imgs=True,
+                 displayGenInterval=10):
         self.generation = 1
         self.base_path = f'{exp_dir}zdt_{self.problem_number}/'
         if not os.path.exists(self.base_path):
@@ -40,6 +40,7 @@ class ZDTBase:
             self.base_path = f'{self.base_path}{exp_alias}/'
         os.makedirs(f'{self.base_path}images/')
         self.keep_imgs = keep_imgs
+        self.displayGenInterval = displayGenInterval
 
     @classmethod
     def f2(cls, x, f1):
@@ -151,11 +152,12 @@ class ZDTBase:
             plt.plot(f1Pareto, f2Pareto, '-y',
                      label='Best deceptive Pareto-optimal Front')
 
-        plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.00), shadow=True,
-                   ncol=2)
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), shadow=True,
+                   ncol=1)
         plt.grid()
         plt.draw()
-        plt.savefig(f'{self.base_path}images/gen{self.generation}.png')
+        plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
+                    bbox_inches='tight')
         plt.pause(0.0001)
         plt.show(block=False)
 
@@ -332,8 +334,8 @@ class ZDT5(ZDTBase):
     problem_number = 5
 
     f1_min_representation = 1
-    f1_max_representation = 30
-    f2_max_representation = 8
+    f1_max_representation = 31
+    f2_max_representation = 11
 
     @classmethod
     def decodechromosome(cls, bits):
@@ -362,6 +364,60 @@ class ZDT5(ZDTBase):
     @staticmethod
     def h(f1, g):
         return 1 / f1
+
+    def get_global_pareto_front_points(self, n_points=31):
+        x = np.linspace(1, 31, 31)
+        y = np.array([self.globalParetoFront(x_i) for x_i in x])
+        return np.column_stack((x, y))
+
+    def display(self, statistics):
+        if self.generation % self.displayGenInterval != 1:
+            self.generation = self.generation + 1
+            return
+        f1x = []
+        f2x = []
+        for point in statistics.ParetoSet:
+            f1x.append(point.Fitness[0])
+            f2x.append(point.Fitness[1])
+
+        xpop = []
+        ypop = []
+        for individual in statistics.population:
+            xpop.append(individual.Fitness[0])
+            ypop.append(individual.Fitness[1])
+
+        plt.figure(1)
+        plt.clf()
+        plt.axis([self.f1_min_representation - 1, self.f1_max_representation,
+                  self.f2_min_representation, self.f2_max_representation])
+        plt.xlabel("F1(x)")
+        plt.ylabel("F2(x)")
+        plt.plot(xpop, ypop, "ko", label="individuals")
+        plt.plot(f1x, f2x, "ro", label="pareto front")
+        plt.title("Zitzler-Deb-Thiele's function {}  -  GENERATION: {}".format(
+            self.problem_number, self.generation))
+
+        self.f1Pareto = np.linspace(1, 31, 31)
+        self.f2ParetoGlobal = np.array(
+            [self.globalParetoFront(x_i) for x_i in self.f1Pareto])
+        plt.scatter(self.f1Pareto, self.f2ParetoGlobal,
+                    c='g', label='Global Pareto-optimal Front')
+
+        f2Pareto = np.array([self.deceptiveParetoFront(x_i)
+                             for x_i in self.f1Pareto])
+        plt.scatter(self.f1Pareto, f2Pareto, c='y',
+                    label='Best deceptive Pareto-optimal Front')
+
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), shadow=True,
+                   ncol=1)
+        plt.grid()
+        plt.draw()
+        plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
+                    bbox_inches='tight')
+        plt.pause(0.0001)
+        plt.show(block=False)
+
+        self.generation = self.generation + 1
 
 
 class ZDT6(ZDTBase):
