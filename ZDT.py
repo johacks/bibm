@@ -1,5 +1,6 @@
 import math
 import NPGA
+from NPGA.util import IsNonDominatedableFast
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
@@ -7,6 +8,7 @@ from PIL import Image
 import os
 from datetime import datetime
 import yaml
+from IPython.display import clear_output
 
 
 class ZDTBase:
@@ -26,7 +28,7 @@ class ZDTBase:
     f2_max_representation = 4
 
     def __init__(self, exp_dir='experiments/', exp_alias=None, keep_imgs=True,
-                 displayGenInterval=10):
+                 saveImgInterval=10):
         self.generation = 1
         self.base_path = f'{exp_dir}zdt_{self.problem_number}/'
         if not os.path.exists(self.base_path):
@@ -40,7 +42,7 @@ class ZDTBase:
             self.base_path = f'{self.base_path}{exp_alias}/'
         os.makedirs(f'{self.base_path}images/')
         self.keep_imgs = keep_imgs
-        self.displayGenInterval = displayGenInterval
+        self.saveImgInterval = saveImgInterval
 
     @classmethod
     def f2(cls, x, f1):
@@ -110,9 +112,6 @@ class ZDTBase:
         return [[F1, "minimize"], [F2, "minimize"]]
 
     def display(self, statistics):
-        if self.generation % self.displayGenInterval != 1:
-            self.generation = self.generation + 1
-            return
         f1x = []
         f2x = []
         for point in statistics.ParetoSet:
@@ -137,8 +136,8 @@ class ZDTBase:
             self.problem_number, self.generation))
 
         f1Pareto = self.f1Pareto
-        plt.plot(f1Pareto, self.f2ParetoGlobal,
-                 '-g', label='Global Pareto-optimal Front')
+        plt.scatter(self.paretoGlobalFront[:, 0], self.paretoGlobalFront[:, 1],
+                    c='g', label='Global Pareto-optimal Front', s=1)
 
         if self.gLocalParetoValue is not None:
             f2Pareto = np.array([self.localParetoFront(x_i)
@@ -152,12 +151,14 @@ class ZDTBase:
             plt.plot(f1Pareto, f2Pareto, '-y',
                      label='Best deceptive Pareto-optimal Front')
 
+        clear_output()
         plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), shadow=True,
                    ncol=1)
         plt.grid()
         plt.draw()
-        plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
-                    bbox_inches='tight')
+        if self.generation % self.saveImgInterval == 1:
+            plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
+                        bbox_inches='tight')
         plt.pause(0.0001)
         plt.show(block=False)
 
@@ -167,7 +168,9 @@ class ZDTBase:
         x = np.linspace(self.f1_min_representation,
                         self.f1_max_representation, n_points)
         y = np.array([self.globalParetoFront(x_i) for x_i in x])
-        return np.column_stack((x, y))
+        f = np.column_stack((x, y))
+        real_pareto_points = IsNonDominatedableFast(f)
+        return f[np.where(real_pareto_points == bool(True))]
 
     def test(self, population_size=200, max_generation=400,
              crossover_rate=0.65, mutation_rate=1/170, niche_radius=0.02,
@@ -182,11 +185,13 @@ class ZDTBase:
             return self.getfitness(genes)
 
         self.f1Pareto = np.linspace(self.f1_min_representation,
-                                    self.f1_max_representation, 100)
+                                    self.f1_max_representation, 1000)
         self.f2ParetoGlobal = np.array(
             [self.globalParetoFront(x_i) for x_i in self.f1Pareto])
 
-        self.paretoGlobalFront = list(zip(self.f1Pareto, self.f2ParetoGlobal))
+        self.paretoGlobalFront = np.array(list(zip(self.f1Pareto, self.f2ParetoGlobal)))
+        real_pareto_points = IsNonDominatedableFast(self.paretoGlobalFront)
+        self.paretoGlobalFront = self.paretoGlobalFront[np.where(real_pareto_points == True)]
 
         optimalFitness = [0, 0]
 
@@ -213,14 +218,14 @@ class ZDTBase:
 
         # Gif
         fp_in = [f'{self.base_path}images/gen{g}.png'
-                 for g in range(1, max_generation+1, self.displayGenInterval)]
+                 for g in range(1, max_generation+1, self.saveImgInterval)]
         fp_out = f"{self.base_path}evolution.gif"
 
         # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
         img, *imgs = [Image.open(f) for f in fp_in]
         img.save(fp=fp_out, format='GIF', append_images=imgs,
                  save_all=True,
-                 duration=(5000 // (max_generation / self.displayGenInterval)),
+                 duration=(5000 // (max_generation / self.saveImgInterval)),
                  loop=0)
 
         # Cleanup images
@@ -305,7 +310,7 @@ class ZDT4(ZDTBase):
     problem_number = 4
 
     f1_max_representation = 1
-    f2_max_representation = 45
+    f2_max_representation = 20
 
     @staticmethod
     def f1(x):
@@ -371,9 +376,6 @@ class ZDT5(ZDTBase):
         return np.column_stack((x, y))
 
     def display(self, statistics):
-        if self.generation % self.displayGenInterval != 1:
-            self.generation = self.generation + 1
-            return
         f1x = []
         f2x = []
         for point in statistics.ParetoSet:
@@ -408,12 +410,14 @@ class ZDT5(ZDTBase):
         plt.scatter(self.f1Pareto, f2Pareto, c='y',
                     label='Best deceptive Pareto-optimal Front')
 
+        clear_output()
         plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), shadow=True,
                    ncol=1)
         plt.grid()
         plt.draw()
-        plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
-                    bbox_inches='tight')
+        if self.generation % self.saveImgInterval == 1:
+            plt.savefig(f'{self.base_path}images/gen{self.generation}.png',
+                        bbox_inches='tight')
         plt.pause(0.0001)
         plt.show(block=False)
 

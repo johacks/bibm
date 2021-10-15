@@ -114,52 +114,40 @@ class DiversityMaximumExtension:
 """
 
 
-# class DiversityExtension:
-#     def __init__(self, frontier):
-#         self.frontier = np.array(frontier)
+class Extension:
+    def __init__(self, frontier):
+        self.frontier = np.array(frontier)
 
-#     def runMetric(self, statistics):
-#         points = []
+    def runMetric(self, statistics):
+        # Collect points in estimated pareto frontier
+        points = np.array([np.array(p.Fitness) for p in statistics.ParetoSet])
+        # Compute extreme points in known frontier
+        frontier_f1_ext = self.frontier[np.argmin(self.frontier[:, 0])]
+        frontier_f2_ext = self.frontier[np.argmin(self.frontier[:, 1])]
+        # Compute extreme points in solution pareto
+        pts_f1_ext_idx = np.argmin(points[:, 0])
+        pts_f2_ext_idx = np.argmin(points[:, 1])
+        # Compute distances between extremes
+        d1_e = np.linalg.norm(frontier_f1_ext-points[pts_f1_ext_idx], ord=1)
+        d2_e = np.linalg.norm(frontier_f2_ext-points[pts_f2_ext_idx], ord=1)
+        d_e = d1_e + d2_e
+        # Compute rest of distances
+        # Compute minimum (Manhattan) distances between these points
+        mindistances = np.linalg.norm(points - points[:, None], axis=-1, ord=1)
+        np.fill_diagonal(mindistances, np.Inf)
+        curr_point = pts_f1_ext_idx
+        mindistances_aux = np.copy(mindistances)
+        mindistances_aux[:, pts_f2_ext_idx] = np.Inf
+        distances = []
+        curr_point = pts_f1_ext_idx
+        while len(distances) < len(points) - 2:
+            next_point = np.argmin(mindistances_aux[curr_point])
+            distances.append(mindistances_aux[curr_point, next_point])
+            mindistances_aux[:, curr_point] = np.Inf
+            curr_point = next_point
+        distances.append(mindistances[curr_point, pts_f2_ext_idx])
+        distances = np.array(distances)
+        d_mean = np.mean(distances)
+        return ((d_e + np.sum(np.abs(distances-d_mean))) /
+                (d_e + len(points)*d_mean))
 
-#         for point in statistics.ParetoSet:
-#             p = np.array([point.Fitness[0], point.Fitness[0]])
-#             points.append(p)
-
-#         points = np.array(points)
-#         number_functions = points.shape[1]
-
-#         # Get distances and mean distances between points
-#         distances = []
-#         for i in range(len(points)-1):
-#             point0 = points[i]
-#             point1 = points[i+1]
-
-#             count = 0
-#             for j in range(number_functions):
-#                 count+= (point0[j]-point1[j])[0]**2
-
-#             distances.append(np.sqrt(count))
-#             mean_distances = np.mean(distances)
-
-#         # Get distances between extreme frontier points and its nearest pareto point
-#         distance_ext = []
-#         for i in range(number_functions):
-#             index = np.where(self.frontier == np.max(self.frontier[:,i]))
-#             ext_point = self.frontier[index]
-#             distances = np.linalg.norm(ext_point - points[:, None], axis=-1, ord=1)
-#             distance_ext.append(np.min(distances))
-
-#         # First summary of metric
-#         sum1 = np.sum(distance_ext)
-
-#         # Calculate second summary of the metric
-#         sum2 = 0
-#         for distance in distances:
-#             sum2 += np.abs(distance - mean_distances)
-
-#         # Calculate denominator of the metric
-#         denominator = 0
-#         for i in range(number_functions):
-#             denominator+=distance_ext[i]+(len(points)*mean_distances)
-
-#         return (sum1 + sum2)/denominator
