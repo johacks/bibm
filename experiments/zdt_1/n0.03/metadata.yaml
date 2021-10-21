@@ -1,0 +1,12 @@
+Metrics:
+  Extension: 0.6427734566191652
+  GenerationalDistance: 0.0182607718295038
+  Spacing: 0.016811447177551692
+Parameters:
+  Candidate Size: 4
+  Crossover rate: 0.65
+  Max Generations: 401
+  Mutation Rate: 0.0058823529411764705
+  Niche Radius: 0.03162277660168379
+  Population Size: 250
+  t_dom: 0.13
