@@ -189,9 +189,11 @@ class ZDTBase:
         self.f2ParetoGlobal = np.array(
             [self.globalParetoFront(x_i) for x_i in self.f1Pareto])
 
-        self.paretoGlobalFront = np.array(list(zip(self.f1Pareto, self.f2ParetoGlobal)))
+        self.paretoGlobalFront = np.array(list(zip(self.f1Pareto,
+                                                   self.f2ParetoGlobal)))
         real_pareto_points = IsNonDominatedableFast(self.paretoGlobalFront)
-        self.paretoGlobalFront = self.paretoGlobalFront[np.where(real_pareto_points == True)]
+        self.paretoGlobalFront = self.paretoGlobalFront[np.where(
+            real_pareto_points == bool(True))]
 
         optimalFitness = [0, 0]
 
