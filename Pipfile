@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 numpy = "*"
-npga = {git = "https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA"}
+npga = {git = "https://github.com/EmilioSchi/Niched-Pareto-Genetic-Algorithm-NPGA#egg=NPGA"}
 matplotlib = "*"
 pillow = "*"
 pyyaml = "*"
