@@ -1,18 +1,17 @@
-from simanneal import Annealer
+import simanneal
 import numpy as np
 import random
+import time
+import sys
 
 N = 27
 
 
-class NQueensBaseAnnealer(Annealer):
-
+class NQueensBaseAnnealer(simanneal.Annealer):
+    
     def __init__(self, initial_state=None, load_state=None):
         super().__init__(initial_state=initial_state, load_state=load_state)
-        self.epoch = 0
-
-    def anneal(self):
-        return super().anneal()
+        self.epochs = 0
 
     def energy(self):
         n_collisions = 0
@@ -24,12 +23,11 @@ class NQueensBaseAnnealer(Annealer):
                 elif abs(j - n) == m + 1:
                     n_collisions += 1
         if n_collisions == 0:
-            # self.user_exit = True
-            pass
+            self.user_exit = True
         return n_collisions
 
     def move(self):
-        self.epoch += 1
+        self.epochs += 1
         # swap places of queens
         a = random.randint(0, len(self.state) - 1)
         b = random.randint(0, len(self.state) - 1)
@@ -40,13 +38,14 @@ if __name__ == '__main__':
     ann = NQueensBaseAnnealer(np.arange(N))
     schedule = ann.auto(minutes=1)
     print()
-    print(ann.epoch)
     print(schedule)
-    ann.user_exit = False
+    # schedule['updates'] = schedule['steps']
+
+    ann = NQueensBaseAnnealer(np.arange(N))
     ann.set_schedule(schedule)
     best_sol, best_cost = ann.anneal()
     print()
-    print(ann.epoch)
+    # print(ann.epoch)
     print(best_sol)
     for i in range(N):
         for j in range(N):
@@ -56,3 +55,4 @@ if __name__ == '__main__':
                 print('.', end=' ')
         print()
     print(best_cost)
+    print('Epocas:' + str(ann.epochs))
