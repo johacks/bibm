@@ -52,6 +52,9 @@ class NQueensBaseAnnealer(simanneal.Annealer):
         return r
 
     def plot_evolution(self):
+        if len(self.T_hist) < 2:
+            print('No hay suficientes datos para la representación')
+            return
         # Plot temperature, energy, accept, improve
         fig = plt.figure(figsize=(22, 10), constrained_layout=True)
         gs = fig.add_gridspec(2, 2)
@@ -104,6 +107,41 @@ class NQueensBaseAnnealer(simanneal.Annealer):
                   (T, E, 100.0 * acceptance, 100.0 * improvement,
                    time_string(elapsed), time_string(remain)))
             sys.stdout.flush()
+
+    def copy_state(self, state):
+        return state.copy()
+
+
+# Variant with an alternative codification and environment definition
+class Alt1NQueensBaseAnnealer(NQueensBaseAnnealer):
+    def __init__(self, n_queens=7, load_state=None):
+        self.n_queens = n_queens
+        init = np.random.randint(low=0, high=n_queens, size=n_queens)
+        simanneal.Annealer.__init__(self,
+                                    initial_state=init, load_state=load_state)
+        self.reset_metrics()
+
+    def move(self):
+        self.epochs += 1
+        # Select a random queen
+        q = random.randint(0, self.n_queens - 1)
+        # Move it to a different position in the same column
+        r = random.randint(0, self.n_queens - 2)
+        if r >= self.state[q]:
+            r += 1
+        self.state[q] = r
+
+
+# Variant with an alternative codification and environment definition
+class Alt2NQueensBaseAnnealer(Alt1NQueensBaseAnnealer):
+
+    def move(self):
+        self.epochs += 1
+        # Select a random queen
+        q = random.randint(0, self.n_queens - 1)
+        # Move it to a random position forward or backward
+        r = random.randint(0, 1) - 1
+        self.state[q] = (self.state[q] + r) % self.n_queens
 
 
 if __name__ == '__main__':
