@@ -59,8 +59,8 @@ def execute_experiments(n_final, iterations):
 
             
 if __name__=='__main__':
-    n_final = 150
-    iterations = 20
+    n_final = 100
+    iterations = 5
     
     execute_auto_experiments(n_final, iterations)
     #execute_experiments(n_final, iterations)
