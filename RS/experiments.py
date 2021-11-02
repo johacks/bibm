@@ -58,9 +58,9 @@ def execute_experiments(n_final, iterations):
     df.to_csv('./results/experiments.csv', index=False)
 
             
-if __name__ =='__main__':
-    n_final = 150
-    iterations = 20
+if __name__=='__main__':
+    n_final = 100
+    iterations = 5
     
     execute_auto_experiments(n_final, iterations)
-    #execute_experiments(n_final, iterations)
+    # execute_experiments(n_final, iterations)
