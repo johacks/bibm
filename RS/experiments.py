@@ -18,7 +18,7 @@ def execute_auto_experiments(n_final, iterations):
     column_names = ['n_reinas', 'epochs', 'best_cost', 'schedule']
     df = pd.DataFrame(columns=column_names)
 
-    for n in range(60,n_final+1):
+    for n in range(60, n_final+1):
         for _ in range(iterations):           
             epochs, best_cost, schedule = execute_auto_experiment(n)
 
@@ -58,7 +58,7 @@ def execute_experiments(n_final, iterations):
     df.to_csv('./results/experiments.csv', index=False)
 
             
-if __name__=='__main__':
+if __name__ =='__main__':
     n_final = 150
     iterations = 20
     
